@@ -2,6 +2,40 @@
 
 Um aplicativo mobile moderno de gerenciamento de tarefas com notificações, desenvolvido especificamente para desenvolvedores.
 
+## 🚀 COMO EXECUTAR O APLICATIVO
+
+### ⚠️ IMPORTANTE: O app Flutter está na pasta `app/`
+
+Para executar o aplicativo móvel:
+
+```bash
+# Navegar para a pasta do app Flutter
+cd app
+
+# Executar no emulador Android
+flutter run
+```
+
+### 📋 Verificar Dispositivos Disponíveis
+
+```bash
+cd app
+flutter devices
+```
+
+### 🛠️ Comandos Úteis
+
+```bash
+# Limpar build cache
+cd app && flutter clean && flutter pub get
+
+# Executar em dispositivo específico
+cd app && flutter run -d emulator-5554
+
+# Executar com hot reload ativado
+cd app && flutter run --hot
+```
+
 ## 🚀 Tecnologias
 
 ### Backend

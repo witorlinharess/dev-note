@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,71 +22,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Navega para a tela principal após 3 segundos
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_box,
-              size: 80,
-              color: AppColors.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Dev Todo',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Gerencie suas tarefas como um dev!',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 48),
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Carregando...',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -190,9 +126,9 @@ class HomeScreen extends StatelessWidget {
             // Botão de ação
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: CustomButton(
+                text: 'Ver Minhas Tarefas',
                 onPressed: () {
-                  // TODO: Implementar navegação para lista de todos
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Funcionalidade em desenvolvimento! 🚀'),
@@ -200,18 +136,8 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Ver Minhas Tarefas',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                type: ButtonType.primary,
+                fullWidth: true,
               ),
             ),
           ],

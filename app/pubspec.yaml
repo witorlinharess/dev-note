@@ -61,6 +61,8 @@ dependencies:
   # Design System
   design_system:
     path: ../packages/design_system
+  app_images:
+    path: ../packages/app_images
 
 dev_dependencies:
   flutter_test:

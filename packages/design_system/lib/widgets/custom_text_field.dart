@@ -8,6 +8,7 @@ class CustomTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final bool obscureText;
+  final bool hideKeyboardOnSubmit;
   final TextInputType keyboardType;
   final IconData? prefixIcon;
   final Widget? suffixIcon;
@@ -23,7 +24,8 @@ class CustomTextField extends StatefulWidget {
     this.controller,
     this.validator,
     this.onChanged,
-    this.obscureText = false,
+  this.obscureText = false,
+  this.hideKeyboardOnSubmit = true,
     this.keyboardType = TextInputType.text,
     this.prefixIcon,
     this.suffixIcon,
@@ -40,17 +42,17 @@ class CustomTextField extends StatefulWidget {
 class _CustomTextFieldState extends State<CustomTextField> {
   late bool _obscureText;
   late FocusNode _focusNode;
-  bool _isFocused = false;
+  // focus is tracked only to handle potential focus side-effects; UI colors are static now
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.obscureText;
     _focusNode = FocusNode();
+    // rebuild when focus changes so properties that depend on focus (showCursor)
+    // update correctly.
     _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
+      setState(() {});
     });
   }
 
@@ -98,6 +100,15 @@ class _CustomTextFieldState extends State<CustomTextField> {
           keyboardType: widget.keyboardType,
           maxLines: widget.maxLines,
           enabled: widget.enabled,
+          cursorColor: AppColors.primaryDark,
+          style: const TextStyle(color: AppColors.primaryDark),
+          showCursor: _focusNode.hasFocus,
+          onFieldSubmitted: (v) {
+            if (widget.hideKeyboardOnSubmit) {
+              _focusNode.unfocus();
+              // optionally call onChanged/onSubmitted behavior here
+            }
+          },
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle: const TextStyle(
@@ -107,33 +118,35 @@ class _CustomTextFieldState extends State<CustomTextField> {
             prefixIcon: widget.prefixIcon != null
                 ? Icon(
                     widget.prefixIcon,
-                    color: _isFocused ? AppColors.primary : AppColors.textTertiary,
+                    color: AppColors.textTertiary,
                   )
                 : null,
             suffixIcon: _buildSuffixIcon(),
             errorText: widget.errorText,
             filled: true,
-            fillColor: widget.enabled ? AppColors.surface : AppColors.grey100,
+            // Inputs should be white regardless of focus/selection
+            fillColor: widget.enabled ? AppColors.white : AppColors.grey100,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: AppColors.white),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: AppColors.white),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: AppColors.white, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.error),
+              borderSide: BorderSide(color: AppColors.error),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.grey300),
+              borderSide: BorderSide(color: AppColors.grey300),
             ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ],

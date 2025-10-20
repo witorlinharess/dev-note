@@ -1,0 +1,174 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:design_system/design_system.dart';
+import 'terms_screen.dart';
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  void _onCreateAccount() {
+    if (_formKey.currentState?.validate() ?? false) {
+      // TODO: integrar com serviço de cadastro
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Criando conta...')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: AppColors.primaryDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryDark,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: AppColors.primaryDark,
+          statusBarIconBrightness: Brightness.light,
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 0.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(height: 0),
+                const AppLogo(
+                  assetPath: 'assets/images/logo-devnote.svg',
+                  packageName: 'app_images',
+                  size: 80,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Crie sua conta grátis!',
+                  style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.white),
+                ),
+                const SizedBox(height: 24),
+
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      CustomTextField(
+                        controller: _firstNameController,
+                        hint: 'Nome',
+                        prefixIcon: Icons.person,
+                        validator: (v) => (v == null || v.isEmpty) ? 'Informe o nome' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        controller: _lastNameController,
+                        hint: 'Sobrenome',
+                        prefixIcon: Icons.person,
+                        validator: (v) => (v == null || v.isEmpty) ? 'Informe o sobrenome' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        controller: _usernameController,
+                        hint: 'Nome de usuário',
+                        prefixIcon: Icons.alternate_email,
+                        validator: (v) => (v == null || v.isEmpty) ? 'Informe o nome de usuário' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        controller: _emailController,
+                        hint: 'E-mail',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.email,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Informe o e-mail';
+                          if (!v.contains('@')) return 'E-mail inválido';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        controller: _passwordController,
+                        hint: 'Senha',
+                        obscureText: true,
+                        prefixIcon: Icons.lock,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Informe a senha';
+                          if (v.length < 6) return 'Senha muito curta';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        controller: _confirmController,
+                        hint: 'Confirmar senha',
+                        obscureText: true,
+                        prefixIcon: Icons.lock,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Confirme a senha';
+                          if (v != _passwordController.text) return 'As senhas não conferem';
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      GradientButton(
+                        text: 'Criar conta grátis',
+                        onPressed: _onCreateAccount,
+                        height: 52,
+                        borderRadius: 12,
+                        fullWidth: true,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const TermsScreen()),
+                          );
+                        },
+                        child: Text(
+                          'Ao continuar você concorda com os termos e política de privacidade',
+                          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

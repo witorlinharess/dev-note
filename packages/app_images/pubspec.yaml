@@ -1,0 +1,12 @@
+name: app_images
+description: A package that contains shared image assets for the app.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ">=2.18.0 <4.0.0"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

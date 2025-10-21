@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:design_system/design_system.dart';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 
 import '../models/todo.dart';
 import '../utils/storage_helper.dart';
@@ -822,6 +823,13 @@ class _RemindersTabState extends State<RemindersTab> {
                 final item = _ReminderItem(id: 'r_${DateTime.now().millisecondsSinceEpoch}', title: titleCtrl.text.trim(), description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(), dateTime: dt);
                 Navigator.of(ctx).pop(true);
                 _addReminder(item);
+                          // debug: show notification immediately when adding in debug mode to test
+                          try {
+                            if (kDebugMode) {
+                              final nid = item.id.hashCode & 0x7fffffff;
+                              NotificationHelper.showNotification(id: nid, title: item.title, body: item.description ?? 'Lembrete adicionado');
+                            }
+                          } catch (_) {}
               },
               child: const Text('Adicionar'),
             ),

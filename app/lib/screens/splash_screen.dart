@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import 'auth/login_screen.dart';
 import '../widgets/safe_scaffold.dart';
+import '../utils/storage_helper.dart';
+import 'main_nav_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,13 +16,16 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Navega para a tela de login após 3 segundos
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+    // Checa se usuário/token estão salvos. Se sim, vai para MainNavScreen.
+    Future.delayed(const Duration(seconds: 1), () async {
+      final token = await StorageHelper.getToken();
+      final user = await StorageHelper.getUser();
+      if (!mounted) return;
+      if (token != null && user != null) {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainNavScreen()));
+        return;
       }
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginScreen()));
     });
   }
 

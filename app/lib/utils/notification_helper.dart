@@ -1,23 +1,29 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 
 class NotificationHelper {
   NotificationHelper._();
 
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  static bool _initialized = false;
 
   static Future<void> init() async {
     // initialize timezone package
     tzdata.initializeTimeZones();
     try {
-      final String localTz = await FlutterNativeTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(localTz));
+      // Try to use the platform timezone via system locale; if not available, fallback to UTC
+      final local = DateTime.now().timeZoneName;
+      try {
+        tz.setLocalLocation(tz.getLocation(local));
+      } catch (_) {
+        tz.setLocalLocation(tz.UTC);
+      }
     } catch (_) {
-      // fallback to UTC if timezone cannot be determined
-      tz.setLocalLocation(tz.getLocation('UTC'));
+      tz.setLocalLocation(tz.UTC);
     }
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -29,13 +35,39 @@ class NotificationHelper {
 
     final settings = InitializationSettings(android: android, iOS: ios);
 
-    await _plugin.initialize(settings, onDidReceiveNotificationResponse: (response) {
-      // handle notification tap if needed
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('Notification tapped: ${response.payload}');
+    // initialize plugin with retries in case plugins aren't registered yet (e.g. during hot-restart)
+    const int maxAttempts = 5;
+    int attempt = 0;
+    while (attempt < maxAttempts && !_initialized) {
+      try {
+        await _plugin.initialize(settings, onDidReceiveNotificationResponse: (response) {
+          // handle notification tap if needed
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('Notification tapped: ${response.payload}');
+          }
+        });
+        _initialized = true;
+        break;
+      } catch (e) {
+        attempt++;
+        if (e is MissingPluginException) {
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('Missing plugin during notifications init (attempt $attempt). Retrying...');
+          }
+          // wait a bit before retrying
+          await Future.delayed(const Duration(milliseconds: 500));
+          continue;
+        }
+        // non-plugin errors: break and mark as not initialized
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('Notification init failed: $e');
+        }
+        break;
       }
-    });
+    }
 
     // create Android notification channel (ensures heads-up/high importance)
     try {
@@ -46,6 +78,22 @@ class NotificationHelper {
     // request iOS permissions explicitly and try to enable foreground presentation
     try {
       await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (_) {}
+
+    // On Android 13+ we need to request POST_NOTIFICATIONS at runtime
+    try {
+      final status = await Permission.notification.status;
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Notification permission status before request: $status');
+      }
+      if (status.isDenied) {
+        final res = await Permission.notification.request();
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('Notification permission request result: $res');
+        }
+      }
     } catch (_) {}
   }
 
@@ -70,7 +118,7 @@ class NotificationHelper {
         return;
       }
 
-  await _plugin.zonedSchedule(id, title, body, tzDate, details, payload: payload, uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime, androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle);
+  await _plugin.zonedSchedule(id, title, body, tzDate, details, payload: payload, androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle);
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print

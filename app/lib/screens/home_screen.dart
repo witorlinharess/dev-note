@@ -161,6 +161,12 @@ class _HomeScreenState extends State<HomeScreen> {
             });
             Navigator.of(context).pop();
           },
+          onDeleteAll: () {
+            setState(() {
+              _completedTodos.clear();
+            });
+            Navigator.of(context).pop();
+          },
         )));
       });
     } else {

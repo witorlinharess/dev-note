@@ -7,12 +7,14 @@ class CompletedTasksScreen extends StatelessWidget {
   final List<Todo> completedTodos;
   final void Function(Todo) onRestore; // restore to active
   final void Function(Todo) onDelete; // permanent delete
+  final VoidCallback? onDeleteAll;
 
   const CompletedTasksScreen({
     super.key,
     required this.completedTodos,
     required this.onRestore,
     required this.onDelete,
+    this.onDeleteAll,
   });
 
   @override
@@ -22,6 +24,29 @@ class CompletedTasksScreen extends StatelessWidget {
         title: const Text('Tarefas concluídas'),
         backgroundColor: AppColors.primaryLight,
         elevation: 2,
+        actions: [
+          if (onDeleteAll != null)
+            IconButton(
+              tooltip: 'Excluir todas',
+              icon: const Icon(Icons.delete_forever),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Confirmar'),
+                    content: const Text('Deseja excluir todas as tarefas concluídas? Esta ação é irreversível.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+                      ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Excluir')),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  onDeleteAll!();
+                }
+              },
+            ),
+        ],
       ),
       body: completedTodos.isEmpty
           ? Center(

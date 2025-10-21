@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import 'register_screen.dart';
 import '../../services/auth_service.dart';
-import '../home_screen.dart';
+import '../main_nav_screen.dart';
 import '../../widgets/safe_scaffold.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Ir para a Home e limpar a pilha de navegação
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavScreen()),
         (route) => false,
       );
     } else {

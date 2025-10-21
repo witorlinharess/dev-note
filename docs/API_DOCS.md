@@ -25,7 +25,6 @@ Registra um novo usuário.
 ```json
 {
   "email": "usuario@exemplo.com",
-  "username": "usuario123",
   "password": "senha123",
   "name": "Nome do Usuário" // opcional
 }
@@ -38,7 +37,7 @@ Registra um novo usuário.
   "user": {
     "id": "cuid",
     "email": "usuario@exemplo.com",
-    "username": "usuario123",
+  "username": "usuario123", // pode ser gerado automaticamente se não enviado
     "name": "Nome do Usuário",
     "createdAt": "2023-10-20T12:00:00.000Z"
   },

@@ -10,9 +10,11 @@ const prisma = new PrismaClient();
 // Schemas de validação
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
-  username: Joi.string().alphanum().min(3).max(30).required(),
+  username: Joi.string().alphanum().min(3).max(30).optional(),
   password: Joi.string().min(6).required(),
-  name: Joi.string().min(2).max(50).optional()
+  name: Joi.string().min(2).max(50).optional(),
+  firstName: Joi.string().min(1).max(50).optional(),
+  lastName: Joi.string().min(1).max(50).optional()
 });
 
 const loginSchema = Joi.object({
@@ -28,7 +30,14 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    const { email, username, password, name } = value;
+    let { email, username, password, name } = value;
+
+    // Se username não fornecido, gerar a partir do e-mail e sufixo randômico
+    if (!username || username.trim() === '') {
+      const localPart = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+      const suffix = Math.random().toString(36).substring(2, 6);
+      username = `${localPart}${suffix}`.toLowerCase();
+    }
 
     // Verificar se usuário já existe
     const existingUser = await prisma.user.findFirst({
@@ -53,14 +62,15 @@ router.post('/register', async (req, res) => {
         email,
         username,
         password: hashedPassword,
-        name
+        name,
       },
       select: {
         id: true,
         email: true,
         username: true,
         name: true,
-        createdAt: true
+        createdAt: true,
+        updatedAt: true
       }
     });
 
@@ -121,7 +131,9 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         username: user.username,
-        name: user.name
+        name: user.name,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       token
     });

@@ -19,8 +19,10 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS
+// CORS - em dev permitir conexões de emuladores/hosts diferentes
+const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: corsOrigin,
   credentials: true
 }));
 
@@ -56,8 +58,10 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT} (host: ${HOST})`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV}`);
   console.log(`📱 Acesse: http://localhost:${PORT}`);
 });

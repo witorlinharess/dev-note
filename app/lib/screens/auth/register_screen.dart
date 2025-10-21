@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:design_system/design_system.dart';
+import '../../services/auth_service.dart';
+import '../../main.dart';
 import 'terms_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -11,19 +13,16 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _usernameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _usernameController.dispose();
+  _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
@@ -32,9 +31,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _onCreateAccount() {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: integrar com serviço de cadastro
+      _createAccount();
+    }
+  }
+
+  Future<void> _createAccount() async {
+    setState(() => _isLoading = true);
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    final result = await AuthService.register(
+      email: email,
+      password: password,
+      name: name.isEmpty ? null : name,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Criando conta...')),
+        SnackBar(content: Text(result.message ?? 'Conta criada com sucesso')),
+      );
+
+      // Navegar para a Home e limpar a pilha de navegação
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    } else {
+      final errorMsg = result.error ?? 'Erro ao criar conta';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg)),
       );
     }
   }
@@ -81,25 +112,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
                       CustomTextField(
-                        controller: _firstNameController,
+                        controller: _nameController,
                         hint: 'Nome',
                         prefixIcon: Icons.person,
                         validator: (v) => (v == null || v.isEmpty) ? 'Informe o nome' : null,
                       ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
-                        controller: _lastNameController,
-                        hint: 'Sobrenome',
-                        prefixIcon: Icons.person,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Informe o sobrenome' : null,
-                      ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
-                        controller: _usernameController,
-                        hint: 'Nome de usuário',
-                        prefixIcon: Icons.alternate_email,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Informe o nome de usuário' : null,
-                      ),
+                    
                       const SizedBox(height: 12),
                       CustomTextField(
                         controller: _emailController,
@@ -139,12 +157,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 20),
 
-                      GradientButton(
-                        text: 'Criar conta grátis',
-                        onPressed: _onCreateAccount,
-                        height: 52,
-                        borderRadius: 12,
-                        fullWidth: true,
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          GradientButton(
+                            text: 'Criar conta grátis',
+                            onPressed: _isLoading ? null : _onCreateAccount,
+                            height: 52,
+                            borderRadius: 12,
+                            fullWidth: true,
+                          ),
+                          if (_isLoading)
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                              ),
+                            ),
+                        ],
                       ),
 
                       const SizedBox(height: 16),

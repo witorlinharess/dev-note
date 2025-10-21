@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import 'register_screen.dart';
+import '../../services/auth_service.dart';
+import '../../main.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -29,10 +32,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onLogin() {
     if (_formKey.currentState?.validate() ?? false) {
+      _performLogin();
+    }
+  }
+
+  Future<void> _performLogin() async {
+    setState(() => _isLoading = true);
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    final result = await AuthService.login(email, password);
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Autenticando...')),
+        SnackBar(content: Text(result.message ?? 'Login realizado com sucesso')),
       );
-      // TODO: implementar lógica de autenticação
+
+      // Ir para a Home e limpar a pilha de navegação
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error ?? 'Erro no login')),
+      );
     }
   }
 
@@ -117,12 +146,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 24),
 
                       // Entrar (gradient button)
-                      GradientButton(
-                        text: 'Entrar',
-                        onPressed: _onLogin,
-                        height: 56,
-                        borderRadius: 12,
-                        fullWidth: true,
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          GradientButton(
+                            text: 'Entrar',
+                            onPressed: _isLoading ? null : _onLogin,
+                            height: 56,
+                            borderRadius: 12,
+                            fullWidth: true,
+                          ),
+                          if (_isLoading)
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                              ),
+                            ),
+                        ],
                       ),
 
                       const SizedBox(height: 32),

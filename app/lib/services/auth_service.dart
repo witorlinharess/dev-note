@@ -5,7 +5,7 @@ import '../utils/constants.dart';
 import '../utils/storage_helper.dart';
 
 class AuthService {
-  static const String _baseUrl = ApiConstants.baseUrl;
+  static final String _baseUrl = ApiConstants.baseUrl;
 
   // Login
   static Future<AuthResponse> login(String email, String password) async {
@@ -22,19 +22,32 @@ class AuthService {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final user = User.fromJson(data['user']);
-        final token = data['token'] as String;
-        
-        // Salvar token no storage
-        await StorageHelper.saveToken(token);
-        await StorageHelper.saveUser(user);
+        if (data == null || data['user'] == null) {
+          return AuthResponse(success: false, error: 'Resposta inválida do servidor');
+        }
 
-        return AuthResponse(
-          success: true,
-          user: user,
-          token: token,
-          message: data['message'],
-        );
+        final userMap = data['user'];
+        try {
+          final user = User.fromJson(userMap);
+          final token = data['token']?.toString();
+
+          if (token == null || token.isEmpty) {
+            return AuthResponse(success: false, error: 'Token ausente do servidor');
+          }
+
+          // Salvar token no storage
+          await StorageHelper.saveToken(token);
+          await StorageHelper.saveUser(user);
+
+          return AuthResponse(
+            success: true,
+            user: user,
+            token: token,
+            message: data['message'],
+          );
+        } catch (e) {
+          return AuthResponse(success: false, error: 'Erro ao processar usuário: $e');
+        }
       } else {
         return AuthResponse(
           success: false,
@@ -52,7 +65,7 @@ class AuthService {
   // Registro
   static Future<AuthResponse> register({
     required String email,
-    required String username,
+    String? username,
     required String password,
     String? name,
   }) async {
@@ -62,7 +75,7 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
-          'username': username,
+          if (username != null) 'username': username,
           'password': password,
           'name': name,
         }),
@@ -71,19 +84,32 @@ class AuthService {
       final data = json.decode(response.body);
 
       if (response.statusCode == 201) {
-        final user = User.fromJson(data['user']);
-        final token = data['token'] as String;
-        
-        // Salvar token no storage
-        await StorageHelper.saveToken(token);
-        await StorageHelper.saveUser(user);
+        if (data == null || data['user'] == null) {
+          return AuthResponse(success: false, error: 'Resposta inválida do servidor');
+        }
 
-        return AuthResponse(
-          success: true,
-          user: user,
-          token: token,
-          message: data['message'],
-        );
+        final userMap = data['user'];
+        try {
+          final user = User.fromJson(userMap);
+          final token = data['token']?.toString();
+
+          if (token == null || token.isEmpty) {
+            return AuthResponse(success: false, error: 'Token ausente do servidor');
+          }
+
+          // Salvar token no storage
+          await StorageHelper.saveToken(token);
+          await StorageHelper.saveUser(user);
+
+          return AuthResponse(
+            success: true,
+            user: user,
+            token: token,
+            message: data['message'],
+          );
+        } catch (e) {
+          return AuthResponse(success: false, error: 'Erro ao processar usuário: $e');
+        }
       } else {
         return AuthResponse(
           success: false,

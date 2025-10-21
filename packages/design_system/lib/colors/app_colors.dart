@@ -5,6 +5,7 @@ class AppColors {
   static const Color primary = Color(0xFF6D28D9);
   static const Color primaryLight = Color(0xFFFFFFFF);
   static const Color primaryDark = Color(0xFF1A1A1A);
+  static const Color dividerColor = Color.fromARGB(158, 97, 97, 97);
 
   // Provide 'black' as alias to primaryDark so screens using pure black
   // adopt the design-system dark tone.

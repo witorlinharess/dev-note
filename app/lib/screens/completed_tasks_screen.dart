@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import '../models/todo.dart';
+import '../widgets/safe_scaffold.dart';
 
 class CompletedTasksScreen extends StatelessWidget {
   final List<Todo> completedTodos;
@@ -16,11 +17,10 @@ class CompletedTasksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryDark,
+    return SafeScaffold(
       appBar: AppBar(
         title: const Text('Tarefas concluídas'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.primaryLight,
         elevation: 2,
       ),
       body: completedTodos.isEmpty

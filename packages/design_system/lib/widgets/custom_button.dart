@@ -8,6 +8,8 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
   final IconData? icon;
   final bool fullWidth;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   const CustomButton({
     Key? key,
@@ -17,6 +19,8 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.fullWidth = false,
+    this.backgroundColor,
+    this.foregroundColor,
   }) : super(key: key);
 
   @override
@@ -57,8 +61,8 @@ class CustomButton extends StatelessWidget {
       icon: _buildIcon(),
       label: _buildLabel(),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
+        backgroundColor: backgroundColor ?? AppColors.primary,
+        foregroundColor: foregroundColor ?? AppColors.white,
       ),
     );
   }
@@ -69,8 +73,8 @@ class CustomButton extends StatelessWidget {
       icon: _buildIcon(),
       label: _buildLabel(),
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary),
+        foregroundColor: foregroundColor ?? AppColors.primary,
+        side: BorderSide(color: foregroundColor ?? AppColors.primary),
       ),
     );
   }
@@ -81,7 +85,7 @@ class CustomButton extends StatelessWidget {
       icon: _buildIcon(),
       label: _buildLabel(),
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.primary,
+        foregroundColor: foregroundColor ?? AppColors.primary,
       ),
     );
   }
@@ -92,8 +96,8 @@ class CustomButton extends StatelessWidget {
       icon: _buildIcon(),
       label: _buildLabel(),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.success,
-        foregroundColor: AppColors.white,
+        backgroundColor: backgroundColor ?? AppColors.success,
+        foregroundColor: foregroundColor ?? AppColors.white,
       ),
     );
   }
@@ -104,20 +108,20 @@ class CustomButton extends StatelessWidget {
       icon: _buildIcon(),
       label: _buildLabel(),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.error,
-        foregroundColor: AppColors.white,
+        backgroundColor: backgroundColor ?? AppColors.error,
+        foregroundColor: foregroundColor ?? AppColors.white,
       ),
     );
   }
 
   Widget _buildIcon() {
     if (isLoading) {
-      return const SizedBox(
+      return SizedBox(
         width: 16,
         height: 16,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+          valueColor: AlwaysStoppedAnimation<Color>(foregroundColor ?? AppColors.white),
         ),
       );
     }

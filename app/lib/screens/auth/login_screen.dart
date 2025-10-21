@@ -4,6 +4,7 @@ import 'package:design_system/design_system.dart';
 import 'register_screen.dart';
 import '../../services/auth_service.dart';
 import '../home_screen.dart';
+import '../../widgets/safe_scaffold.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -68,148 +69,146 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.primaryDark,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo
-                const SizedBox(height: 24),
-                const AppLogo(
-                  assetPath: 'assets/images/logo-devnote.svg',
-                  packageName: 'app_images',
-                  size: 124,
+    return SafeScaffold(
+      appBar: null,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo
+              const SizedBox(height: 24),
+              const AppLogo(
+                assetPath: 'assets/images/logo-devnote.svg',
+                packageName: 'app_images',
+                size: 124,
+              ),
+
+              const SizedBox(height: 24),
+              Text(
+                'Bem-vindo!',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppColors.white,
                 ),
+              ),
 
-                const SizedBox(height:24),
-                Text(
-                  'Bem-vindo!',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.white,
-                  ),
-                ),
+              const SizedBox(height: 48),
 
-                const SizedBox(height: 48),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Email
+                    SizedBox(
+                      width: double.infinity,
+                      child: CustomTextField(
+                        controller: _emailController,
+                        hint: 'E-mail',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.email,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Informe o e-mail';
+                          return null;
+                        },
+                      ),
+                    ),
 
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // Email
-                      SizedBox(
-                        width: double.infinity,
-                        child: CustomTextField(
-                          controller: _emailController,
-                          hint: 'E-mail',
-                          keyboardType: TextInputType.emailAddress,
-                          prefixIcon: Icons.email,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Informe o e-mail';
-                            return null;
-                          },
+                    const SizedBox(height: 16),
+
+                    // Senha
+                    SizedBox(
+                      width: double.infinity,
+                      child: CustomTextField(
+                        controller: _passwordController,
+                        hint: 'Senha',
+                        obscureText: true,
+                        prefixIcon: Icons.lock,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Informe a senha';
+                          return null;
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Esqueceu a senha
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Recuperação de senha - Em breve')),
+                          );
+                        },
+                        child: Text(
+                          'esqueceu a senha?',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                         ),
                       ),
+                    ),
 
-                      const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                      // Senha
-                      SizedBox(
-                        width: double.infinity,
-                        child: CustomTextField(
-                          controller: _passwordController,
-                          hint: 'Senha',
-                          obscureText: true,
-                          prefixIcon: Icons.lock,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Informe a senha';
-                            return null;
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Esqueceu a senha
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Recuperação de senha - Em breve')),
-                            );
-                          },
-                          child: Text(
-                            'esqueceu a senha?',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                    // Entrar (gradient button)
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: GradientButton(
+                            text: 'Entrar',
+                            onPressed: _isLoading ? null : _onLogin,
+                            height: 56,
+                            borderRadius: 12,
+                            fullWidth: true,
                           ),
                         ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Entrar (gradient button)
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: GradientButton(
-                              text: 'Entrar',
-                              onPressed: _isLoading ? null : _onLogin,
-                              height: 56,
-                              borderRadius: 12,
-                              fullWidth: true,
+                        if (_isLoading)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                             ),
                           ),
-                          if (_isLoading)
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Primeiro acesso
+                    Center(
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'Primeiro acesso? ',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                          children: [
+                            TextSpan(
+                              text: 'Criar conta',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.textTheme.bodyMedium?.color,
                               ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  );
+                                },
                             ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Primeiro acesso
-                      Center(
-                        child: RichText(
-                          text: TextSpan(
-                            text: 'Primeiro acesso? ',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-                            children: [
-                              TextSpan(
-                                text: 'Criar conta',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.textTheme.bodyMedium?.color,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const RegisterScreen(),
-                                      ),
-                                    );
-                                  },
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

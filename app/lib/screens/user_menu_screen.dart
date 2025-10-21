@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
+import 'package:flutter/services.dart';
 import '../utils/storage_helper.dart';
 import '../models/user.dart';
 import 'edit_profile_screen.dart';
 import 'about_screen.dart';
 import 'auth/login_screen.dart';
+import '../widgets/safe_scaffold.dart';
 
 class UserMenuScreen extends StatefulWidget {
   const UserMenuScreen({super.key});
@@ -63,10 +65,48 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
     final hour = DateTime.now().hour;
     final greeting = _greetingForHour(hour);
 
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(
-        title: const Text('Menu do usuário'),
-        backgroundColor: AppColors.primary,
+        centerTitle: false,
+        titleSpacing: 0,
+        toolbarHeight: 80.0,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: Colors.white,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: AppColors.primaryDark,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
+        surfaceTintColor: AppColors.primaryDark,
+        shadowColor: AppColors.primaryDark,
+        elevation: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Menu',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 1.0),
+            child: Divider(height: 0.2, thickness: 0.2, color: AppColors.dividerColor),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -86,9 +126,9 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(greeting, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                      Text(greeting, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primaryLight)),
                       const SizedBox(height: 6),
-                      Text(_user?.name ?? _user?.username ?? '-', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(_user?.name ?? _user?.username ?? '-', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryLight)),
                     ],
                   ),
                 ),
@@ -123,10 +163,11 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: CustomButton(
+                text: 'Sair',
                 onPressed: _logout,
-                child: const Text('Sair'),
+                type: ButtonType.error,
+                fullWidth: true,
               ),
             ),
           ],

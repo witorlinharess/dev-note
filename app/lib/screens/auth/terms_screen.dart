@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import '../../widgets/terms_text.dart';
+import '../../widgets/safe_scaffold.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
@@ -9,11 +10,10 @@ class TermsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
   // Terms content provided by TermsText widget
 
-      return Scaffold(
-        backgroundColor: AppColors.black,
+      return SafeScaffold(
         appBar: AppBar(
         title: const Text('Termos e Privacidade'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.primaryLight,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

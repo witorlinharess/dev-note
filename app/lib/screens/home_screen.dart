@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:design_system/design_system.dart';
 import 'dart:io';
 import '../utils/storage_helper.dart';
 import '../models/todo.dart';
+import '../models/user.dart';
+import '../services/auth_service.dart';
 import 'completed_tasks_screen.dart';
 import 'user_menu_screen.dart';
+import '../widgets/safe_scaffold.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +23,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Todo> _todos = [];
   final List<Todo> _completedTodos = [];
   String? _userPhotoPath;
+  User? _user;
+  final _emailCtrl = TextEditingController();
+  bool _saving = false;
 
   // simple id counter for demo todos
   int _todoCounter = 0;
@@ -53,10 +60,58 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     final photo = await StorageHelper.getUserPhotoPath();
     setState(() {
+      _user = user;
+      _emailCtrl.text = user?.email ?? '';
       _firstName = firstName;
       _greeting = greeting;
       _userPhotoPath = photo;
     });
+  }
+
+  Future<void> _saveEmail() async {
+    if (_user == null) return;
+    setState(() => _saving = true);
+    final updated = _user!.copyWith(email: _emailCtrl.text.trim());
+    await StorageHelper.saveUser(updated);
+    if (!mounted) return;
+    setState(() {
+      _user = updated;
+      _saving = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('E-mail atualizado')));
+  }
+
+  Future<void> _changePassword() async {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final res = await showDialog<bool>(context: context, builder: (ctx) {
+      return AlertDialog(
+        title: const Text('Alterar senha'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: currentCtrl, decoration: const InputDecoration(labelText: 'Senha atual'), obscureText: true),
+            const SizedBox(height: 8),
+            TextField(controller: newCtrl, decoration: const InputDecoration(labelText: 'Nova senha'), obscureText: true),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Alterar')),
+        ],
+      );
+    });
+
+    if (res == true) {
+      final current = currentCtrl.text;
+      final nw = newCtrl.text;
+      final response = await AuthService.changePassword(current, nw);
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha alterada com sucesso')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.error ?? 'Erro ao alterar senha')));
+      }
+    }
   }
 
   void _addTodo(String title, String? description) {
@@ -123,59 +178,73 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryDark,
-      appBar: AppBar(
-        // Greeting placed flush to the very left using leading
-        leadingWidth: 140,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-            child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              // show greeting with first name when available: 'Boa noite, João'
-              _firstName.isNotEmpty ? '$_greeting, $_firstName' : _greeting,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
+    return SafeScaffold(
+  appBar: AppBar(
+  // use a padded title row so content aligns with cards (16px horizontal)
+  centerTitle: false,
+  titleSpacing: 0,
+  toolbarHeight: 80.0,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: Colors.white,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: AppColors.primaryDark,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
+        surfaceTintColor: AppColors.primaryDark,
+        shadowColor: AppColors.primaryDark,
+        elevation: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _firstName.isNotEmpty ? '$_greeting, $_firstName' : _greeting,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const UserMenuScreen()));
+                },
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.inputColor,
+                  backgroundImage: _userPhotoPath != null ? FileImage(File(_userPhotoPath!)) : null,
+                  child: _userPhotoPath == null ? const Icon(Icons.person, color: Colors.white) : null,
+                ),
+              ),
+            ],
           ),
         ),
-        // keep title minimal to avoid shifting the greeting
-        title: const SizedBox.shrink(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const UserMenuScreen()));
-              },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white24,
-                backgroundImage: _userPhotoPath != null ? FileImage(File(_userPhotoPath!)) : null,
-                child: _userPhotoPath == null ? const Icon(Icons.person, color: Colors.white) : null,
-              ),
-            ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 1.0),
+            child: Divider(height: 0.2, thickness: 0.2, color: AppColors.dividerColor),
           ),
-        ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           // Todo list
+          // Todo list
           if (_todos.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              padding: const EdgeInsets.symmetric(vertical: 320.0),
               child: Text(
                 'Nenhuma tarefa ainda. Crie a primeira usando o botão +',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color.fromARGB(255, 143, 143, 143)),
               ),
             )
           else
@@ -236,10 +305,10 @@ class _HomeScreenState extends State<HomeScreen> {
           if (result != null && (result['title']?.isNotEmpty ?? false)) {
             _addTodo(result['title']!, result['desc']);
           }
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+    },
+  backgroundColor: AppColors.primaryLight,
+    child: const Icon(Icons.add, color: AppColors.primaryDark),
+  ),
     );
   }
 

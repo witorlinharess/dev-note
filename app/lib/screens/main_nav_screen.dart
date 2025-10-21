@@ -7,6 +7,7 @@ import 'dart:math' as math;
 
 import '../models/todo.dart';
 import '../utils/storage_helper.dart';
+import '../utils/notification_helper.dart';
 import '../widgets/safe_scaffold.dart';
 import 'user_menu_screen.dart';
 
@@ -727,7 +728,8 @@ class _RemindersTabState extends State<RemindersTab> {
               : _ReminderItem(id: 'r', title: item.toString()));
 
       if (ri.dateTime != null) {
-        final scheduled = ri.dateTime!.subtract(const Duration(minutes: 5));
+        // schedule at the exact date/time the user set (no 5-minute early alert)
+        final scheduled = ri.dateTime!;
         // compute an integer id for the notification
         final nid = ri.id.hashCode & 0x7fffffff;
         NotificationHelper.scheduleNotification(id: nid, title: ri.title, body: ri.description ?? 'Lembrete', dateTime: scheduled, payload: ri.id);

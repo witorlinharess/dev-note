@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -38,6 +36,17 @@ class NotificationHelper {
         print('Notification tapped: ${response.payload}');
       }
     });
+
+    // create Android notification channel (ensures heads-up/high importance)
+    try {
+      const channel = AndroidNotificationChannel('reminders_channel', 'Lembretes', description: 'Notificações de lembretes', importance: Importance.max);
+      await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
+    } catch (_) {}
+
+    // request iOS permissions explicitly and try to enable foreground presentation
+    try {
+      await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (_) {}
   }
 
   /// Schedules a notification at [dateTime] (in local timezone).
@@ -53,14 +62,24 @@ class NotificationHelper {
       return;
     }
 
-    final tzDate = tz.TZDateTime.from(dateTime, tz.local);
-    if (tzDate.isBefore(tz.TZDateTime.now(tz.local))) {
-      // if in the past, show immediately
-      await _plugin.show(id, title, body, details, payload: payload);
-      return;
-    }
+    try {
+      final tzDate = tz.TZDateTime.from(dateTime, tz.local);
+      if (tzDate.isBefore(tz.TZDateTime.now(tz.local))) {
+        // if in the past, show immediately
+        await _plugin.show(id, title, body, details, payload: payload);
+        return;
+      }
 
-    await _plugin.zonedSchedule(id, title, body, tzDate, details, payload: payload, uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime, androidAllowWhileIdle: true);
+  await _plugin.zonedSchedule(id, title, body, tzDate, details, payload: payload, uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime, androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle);
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Failed to schedule zoned notification: $e. Falling back to immediate show.');
+      }
+      try {
+        await _plugin.show(id, title, body, details, payload: payload);
+      } catch (_) {}
+    }
   }
 
   static Future<void> cancel(int id) async {
@@ -69,5 +88,21 @@ class NotificationHelper {
 
   static Future<void> cancelAll() async {
     await _plugin.cancelAll();
+  }
+
+  /// Shows a notification immediately (useful when app is in foreground).
+  static Future<void> showNotification({required int id, required String title, String? body, String? payload}) async {
+    final androidDetails = AndroidNotificationDetails('reminders_channel', 'Lembretes', channelDescription: 'Notificações de lembretes', importance: Importance.max, priority: Priority.high, playSound: true);
+    final iosDetails = DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true);
+    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    try {
+      await _plugin.show(id, title, body, details, payload: payload);
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Failed to show notification immediately: $e');
+      }
+    }
   }
 }

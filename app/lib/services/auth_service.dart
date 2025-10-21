@@ -154,6 +154,30 @@ class AuthService {
     // Por enquanto, apenas verifica se existe
     return token.isNotEmpty;
   }
+
+  // Change password (requires authenticated user)
+  static Future<AuthResponse> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final token = await getCurrentToken();
+      if (token == null) return AuthResponse(success: false, error: 'Usuário não autenticado');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/change-password'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: json.encode({'currentPassword': currentPassword, 'newPassword': newPassword}),
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return AuthResponse(success: true, message: data['message']);
+      } else {
+        return AuthResponse(success: false, error: data['error'] ?? 'Erro ao alterar senha');
+      }
+    } catch (e) {
+      return AuthResponse(success: false, error: 'Erro de conexão: $e');
+    }
+  }
 }
 
 class AuthResponse {

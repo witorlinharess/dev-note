@@ -106,4 +106,22 @@ class StorageHelper {
     await removeToken();
     await removeUser();
   }
+
+  // User photo path helpers (store local file path)
+  static const String _userPhotoKey = 'user_photo_path';
+
+  static Future<void> saveUserPhotoPath(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userPhotoKey, path);
+  }
+
+  static Future<String?> getUserPhotoPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userPhotoKey);
+  }
+
+  static Future<void> removeUserPhotoPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userPhotoKey);
+  }
 }

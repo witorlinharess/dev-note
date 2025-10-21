@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import 'register_screen.dart';
 import '../../services/auth_service.dart';
-import '../../main.dart';
+import '../home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -100,29 +100,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       // Email
-                      CustomTextField(
-                        controller: _emailController,
-                        hint: 'E-mail',
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: Icons.email,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Informe o e-mail';
-                          return null;
-                        },
+                      SizedBox(
+                        width: double.infinity,
+                        child: CustomTextField(
+                          controller: _emailController,
+                          hint: 'E-mail',
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: Icons.email,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Informe o e-mail';
+                            return null;
+                          },
+                        ),
                       ),
 
                       const SizedBox(height: 16),
 
                       // Senha
-                      CustomTextField(
-                        controller: _passwordController,
-                        hint: 'Senha',
-                        obscureText: true,
-                        prefixIcon: Icons.lock,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Informe a senha';
-                          return null;
-                        },
+                      SizedBox(
+                        width: double.infinity,
+                        child: CustomTextField(
+                          controller: _passwordController,
+                          hint: 'Senha',
+                          obscureText: true,
+                          prefixIcon: Icons.lock,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Informe a senha';
+                            return null;
+                          },
+                        ),
                       ),
 
                       const SizedBox(height: 8),
@@ -149,12 +155,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       Stack(
                         alignment: Alignment.center,
                         children: [
-                          GradientButton(
-                            text: 'Entrar',
-                            onPressed: _isLoading ? null : _onLogin,
-                            height: 56,
-                            borderRadius: 12,
-                            fullWidth: true,
+                          SizedBox(
+                            width: double.infinity,
+                            child: GradientButton(
+                              text: 'Entrar',
+                              onPressed: _isLoading ? null : _onLogin,
+                              height: 56,
+                              borderRadius: 12,
+                              fullWidth: true,
+                            ),
                           ),
                           if (_isLoading)
                             const SizedBox(

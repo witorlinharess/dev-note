@@ -5,6 +5,7 @@ import 'register_screen.dart';
 import '../../services/auth_service.dart';
 import '../main_nav_screen.dart';
 import '../../widgets/safe_scaffold.dart';
+import '../../widgets/login_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -26,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -40,28 +41,43 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _performLogin() async {
     setState(() => _isLoading = true);
 
-    final email = _emailController.text.trim();
+    final identifier = _identifierController.text.trim();
     final password = _passwordController.text;
 
-    final result = await AuthService.login(email, password);
+    try {
+      // Simula um pequeno delay para mostrar o loading (verificação do usuário)
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final result = await AuthService.login(identifier, password);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (result.success) {
+      if (result.success) {
+        // Ir para a Home e limpar a pilha de navegação
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavScreen()),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Usuário não encontrado ou senha incorreta'),
+            backgroundColor: AppColors.priorityHigh,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? 'Login realizado com sucesso')),
-      );
-
-      // Ir para a Home e limpar a pilha de navegação
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainNavScreen()),
-        (route) => false,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.error ?? 'Erro no login')),
+        SnackBar(
+          content: const Text('Erro de conexão. Tente novamente.'),
+          backgroundColor: AppColors.priorityHigh,
+        ),
       );
     }
   }
@@ -80,9 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
               // Logo
               const SizedBox(height: 24),
               const AppLogo(
-                assetPath: 'assets/images/logo-devnote.svg',
+                assetPath: 'assets/images/listfy-white.svg',
                 packageName: 'app_images',
-                size: 124,
+                size: 70,
               ),
 
               const SizedBox(height: 24),
@@ -99,16 +115,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Email
+                    // Usuário ou Email
                     SizedBox(
                       width: double.infinity,
                       child: CustomTextField(
-                        controller: _emailController,
-                        hint: 'E-mail',
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: Icons.email,
+                        controller: _identifierController,
+                        hint: '@usuário ou email',
+                        keyboardType: TextInputType.text,
+                        prefixIcon: Icons.alternate_email,
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Informe o e-mail';
+                          if (v == null || v.isEmpty) return 'Informe o usuário ou e-mail';
                           return null;
                         },
                       ),
@@ -151,30 +167,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Entrar (gradient button)
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: GradientButton(
-                            text: 'Entrar',
-                            onPressed: _isLoading ? null : _onLogin,
-                            height: 56,
-                            borderRadius: 12,
-                            fullWidth: true,
-                          ),
-                        ),
-                        if (_isLoading)
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                            ),
-                          ),
-                      ],
+                    // Entrar
+                    LoginButton(
+                      text: 'Entrar',
+                      onPressed: _onLogin,
+                      isLoading: _isLoading,
                     ),
 
                     const SizedBox(height: 32),

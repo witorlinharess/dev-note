@@ -37,9 +37,9 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const AppLogo(
-              assetPath: 'assets/images/logo-devnote.svg',
+              assetPath: 'assets/images/listfy-white.svg',
               packageName: 'app_images',
-              size: 144,
+              size: 50,
             ),
             const SizedBox(height: 24),
             const CircularProgressIndicator(

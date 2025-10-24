@@ -5,6 +5,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/services.dart';
 import '../utils/storage_helper.dart';
 import '../models/user.dart';
+import '../services/auth_service.dart';
 import 'edit_profile_screen.dart';
 import 'about_screen.dart';
 import 'auth/login_screen.dart';
@@ -31,11 +32,26 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
 
   Future<void> _loadData() async {
     final user = await StorageHelper.getUser();
-    final photo = await StorageHelper.getUserPhotoPath();
     if (!mounted) return;
+    
+    // Usar avatar do usuário se disponível, senão usar foto local
+    String? photoPath;
+    if (user?.avatar != null && user!.avatar!.isNotEmpty) {
+      // Se o avatar é uma URL completa, usar diretamente
+      if (user.avatar!.startsWith('http')) {
+        photoPath = user.avatar;
+      } else {
+        // Se é um caminho relativo, construir URL completa
+        photoPath = 'http://10.0.2.2:3000${user.avatar}';
+      }
+    } else {
+      // Fallback para foto local
+      photoPath = await StorageHelper.getUserPhotoPath();
+    }
+    
     setState(() {
       _user = user;
-      _photoPath = photo;
+      _photoPath = photoPath;
     });
   }
 
@@ -118,7 +134,11 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
                 CircleAvatar(
                   radius: 36,
                   backgroundColor: Colors.white24,
-                  backgroundImage: _photoPath != null ? FileImage(File(_photoPath!)) : null,
+                  backgroundImage: _photoPath != null 
+                    ? (_photoPath!.startsWith('http') 
+                        ? NetworkImage(_photoPath!) as ImageProvider
+                        : FileImage(File(_photoPath!)))
+                    : null,
                   child: _photoPath == null ? const Icon(Icons.person, color: Colors.white, size: 36) : null,
                 ),
                 const SizedBox(width: 16),
@@ -155,6 +175,12 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AboutScreen())),
                   ),
+                  const Divider(height: 1),
+                  ListTile(
+                    title: const Text('Configurações'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showConfigurationsDialog(),
+                  ),
                 ],
               ),
             ),
@@ -174,6 +200,157 @@ class _UserMenuScreenState extends State<UserMenuScreen> {
         ),
       ),
     );
+  }
+
+  void _showConfigurationsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width - 32, // Largura similar ao botão Sair (tela menos padding)
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Configurações',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.delete_forever, color: Colors.red),
+                  title: const Text('Excluir conta'),
+                  subtitle: const Text('Remover permanentemente'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showDeleteAccountDialog();
+                  },
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryDark,
+                    ),
+                    child: const Text('Fechar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Excluir conta'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '⚠️ ATENÇÃO: Esta ação é irreversível!',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Ao excluir sua conta:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text('• Todos os seus dados serão permanentemente removidos'),
+              Text('• Suas tarefas e informações não poderão ser recuperadas'),
+              Text('• Seu e-mail e nome de usuário ficarão permanentemente indisponíveis para uso futuro'),
+              SizedBox(height: 16),
+              Text(
+                'Tem certeza que deseja continuar?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryDark,
+              ),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => _deleteAccount(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Excluir conta'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteAccount() async {
+    try {
+      Navigator.of(context).pop(); // Fecha o dialog
+      
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      await AuthService.deleteAccount();
+      
+      if (mounted) {
+        Navigator.of(context).pop(); // Fecha o loading
+        
+        // Navegar para tela de login e limpar todo o stack
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conta excluída com sucesso'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Fecha o loading
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir conta: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // navigation-only screen: EditProfileScreen and AboutScreen are pushed from the menu items

@@ -1,6 +1,6 @@
 {
-    "name": "dev_todo_app",
-    "short_name": "dev_todo_app",
+    "name": "listfy_app",
+    "short_name": "listfy_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

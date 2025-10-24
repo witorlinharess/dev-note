@@ -2,7 +2,7 @@
     <!-- Permission required on Android 13+ to post notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:label="dev_todo_app"
+        android:label="listfy_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

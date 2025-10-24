@@ -1,4 +1,4 @@
-package com.example.dev_todo_app
+package com.example.listfy_app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -12,7 +12,7 @@ import 'dart:typed_data';
 class AppLogo extends StatelessWidget {
   const AppLogo({
     super.key,
-    this.assetPath = 'assets/images/logo-devnote.svg',
+  this.assetPath = 'assets/images/logo-listfy.svg',
     this.packageName,
     this.size = 96,
     this.semanticLabel,

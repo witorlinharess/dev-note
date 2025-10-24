@@ -4,8 +4,6 @@ import 'package:design_system/design_system.dart';
 import 'dart:io';
 import '../utils/storage_helper.dart';
 import '../models/todo.dart';
-import '../models/user.dart';
-import '../services/auth_service.dart';
 import 'completed_tasks_screen.dart';
 import 'user_menu_screen.dart';
 import '../widgets/safe_scaffold.dart';
@@ -23,9 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Todo> _todos = [];
   final List<Todo> _completedTodos = [];
   String? _userPhotoPath;
-  User? _user;
   final _emailCtrl = TextEditingController();
-  bool _saving = false;
 
   // simple id counter for demo todos
   int _todoCounter = 0;
@@ -60,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     final photo = await StorageHelper.getUserPhotoPath();
     setState(() {
-      _user = user;
       _emailCtrl.text = user?.email ?? '';
       _firstName = firstName;
       _greeting = greeting;
@@ -68,60 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _saveEmail() async {
-    if (_user == null) return;
-    setState(() => _saving = true);
-    final updated = _user!.copyWith(email: _emailCtrl.text.trim());
-    await StorageHelper.saveUser(updated);
-    if (!mounted) return;
-    setState(() {
-      _user = updated;
-      _saving = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('E-mail atualizado')));
-  }
-
-  Future<void> _changePassword() async {
-    final currentCtrl = TextEditingController();
-    final newCtrl = TextEditingController();
-    final res = await showDialog<bool>(context: context, builder: (ctx) {
-      return AlertDialog(
-        title: const Text('Alterar senha'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: currentCtrl, decoration: const InputDecoration(labelText: 'Senha atual'), obscureText: true),
-            const SizedBox(height: 8),
-            TextField(controller: newCtrl, decoration: const InputDecoration(labelText: 'Nova senha'), obscureText: true),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Alterar')),
-        ],
-      );
-    });
-
-    if (res == true) {
-      final current = currentCtrl.text;
-      final nw = newCtrl.text;
-      final response = await AuthService.changePassword(current, nw);
-      if (response.success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha alterada com sucesso')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.error ?? 'Erro ao alterar senha')));
-      }
-    }
-  }
-
-  void _addTodo(String title, String? description) {
+  void _addTodo(String title, String? description, String priority) {
     final now = DateTime.now();
     final todo = Todo(
       id: 'tmp_${_todoCounter++}',
       title: title,
       description: description,
       completed: false,
-      priority: 'normal',
+      priority: priority,
       dueDate: null,
       createdAt: now,
       updatedAt: now,
@@ -272,49 +221,170 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // open a simple dialog to create a todo
-            final result = await showDialog<Map<String, String?>>(context: context, builder: (ctx) {
+          final result = await showDialog<Map<String, String?>>(
+            context: context, 
+            builder: (ctx) {
               final titleCtrl = TextEditingController();
               final descCtrl = TextEditingController();
-              // compute available width minus inset padding (16 left + 16 right)
-              final dialogWidth = MediaQuery.of(ctx).size.width - 32.0;
-              return AlertDialog(
-                insetPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-                contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                title: const Text('Nova tarefa'),
-                content: SizedBox(
-                  width: dialogWidth,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: titleCtrl,
-                        decoration: const InputDecoration(hintText: 'Título'),
+              String selectedPriority = 'baixa';
+              
+              return StatefulBuilder(
+                builder: (dialogContext, setDialogState) {
+                  return AlertDialog(
+                    title: const Text('Nova tarefaaaaaaaa'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Campo Título
+                        TextField(
+                          controller: titleCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Título',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Campo Descrição
+                        TextField(
+                          controller: descCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Descrição',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Seção Prioridade
+                        const Text(
+                          'Prioridade:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        // Opções de Prioridade
+                        InkWell(
+                          onTap: () => setDialogState(() => selectedPriority = 'baixa'),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.priorityLow, width: 2),
+                                  color: selectedPriority == 'baixa' ? AppColors.priorityLow : Colors.transparent,
+                                ),
+                                child: selectedPriority == 'baixa'
+                                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text('Baixa', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () => setDialogState(() => selectedPriority = 'média'),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.priorityMedium, width: 2),
+                                  color: selectedPriority == 'média' ? AppColors.priorityMedium : Colors.transparent,
+                                ),
+                                child: selectedPriority == 'média'
+                                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text('Média', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () => setDialogState(() => selectedPriority = 'alta'),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.priorityHigh, width: 2),
+                                  color: selectedPriority == 'alta' ? AppColors.priorityHigh : Colors.transparent,
+                                ),
+                                child: selectedPriority == 'alta'
+                                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text('Alta', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () => setDialogState(() => selectedPriority = 'urgente'),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.priorityUrgent, width: 2),
+                                  color: selectedPriority == 'urgente' ? AppColors.priorityUrgent : Colors.transparent,
+                                ),
+                                child: selectedPriority == 'urgente'
+                                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text('Urgente', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: const Text('Cancelar'),
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: descCtrl,
-                        decoration: const InputDecoration(hintText: 'Descrição'),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop({
+                            'title': titleCtrl.text.trim(),
+                            'desc': descCtrl.text.trim(),
+                            'priority': selectedPriority,
+                          });
+                        },
+                        child: const Text('Criar'),
                       ),
                     ],
-                  ),
-                ),
-                actions: [
-                  TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-                  ElevatedButton(onPressed: () {
-                    Navigator.of(context).pop({'title': titleCtrl.text.trim(), 'desc': descCtrl.text.trim()});
-                  }, child: const Text('Criar')),
-                ],
+                  );
+                },
               );
-            });
+            },
+          );
 
           if (result != null && (result['title']?.isNotEmpty ?? false)) {
-            _addTodo(result['title']!, result['desc']);
+            _addTodo(result['title']!, result['desc'], result['priority'] ?? 'baixa');
           }
-    },
-  backgroundColor: AppColors.primaryLight,
-    child: const Icon(Icons.add, color: AppColors.primaryDark),
-  ),
+        },
+        backgroundColor: AppColors.primaryLight,
+        child: const Icon(Icons.add, color: AppColors.primaryDark),
+      ),
     );
   }
 

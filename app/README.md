@@ -1,4 +1,4 @@
-# dev_todo_app
+# listfy_app
 
 A new Flutter project.
 

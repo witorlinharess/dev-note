@@ -1,4 +1,4 @@
-# 🎯 Como Executar o Dev Todo App
+# 🎯 Como Executar o Listfy App
 
 ## ✅ Solução Implementada
 
@@ -52,7 +52,7 @@ cd app && flutter run --verbose
 ## 📋 Estrutura Final
 
 ```
-dev-note/
+listfy/
 ├── pubspec.yaml          ✅ Criado (permite flutter run na raiz)
 ├── lib/main.dart         ✅ Tela de redirecionamento
 ├── run-app.sh            ✅ Script automatizado

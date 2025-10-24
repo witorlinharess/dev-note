@@ -1,4 +1,4 @@
-# 🎯 Projeto Dev Todo - Status Final
+# 🎯 Projeto Listfy - Status Final
 
 ## ✅ Estrutura Criada com Sucesso
 
@@ -97,7 +97,7 @@ prisma/
 ### 1. **Finalizar Frontend**
 ```bash
 # Navegar para a pasta app
-cd /home/usuario/dev-note/app
+cd /home/usuario/listfy/app
 
 # Instalar dependências (já feito)
 flutter pub get
@@ -109,7 +109,7 @@ flutter run
 ### 2. **Executar Backend**
 ```bash
 # Na raiz do projeto
-cd /home/usuario/dev-note
+cd /home/usuario/listfy
 
 # Instalar dependências
 npm install
@@ -123,7 +123,7 @@ npm run dev
 
 ### 3. **Desenvolvimento das Telas**
 - Implementar telas de login/registro
-- Criar lista de tarefas
+- Criar listas no Listfy
 - Implementar formulários de CRUD
 - Configurar navegação com GoRouter
 - Integrar notificações locais

@@ -1,4 +1,4 @@
-# API Documentation - Dev Todo
+# API Documentation - Listfy
 
 ## Base URL
 ```
@@ -316,7 +316,7 @@ Verifica se a API está funcionando.
 ```json
 {
   "status": "OK",
-  "message": "Dev Todo API está funcionando",
+  "message": "Listfy API está funcionando",
   "timestamp": "2023-10-20T12:00:00.000Z"
 }
 ```

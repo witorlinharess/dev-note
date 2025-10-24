@@ -30,6 +30,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir arquivos estáticos (uploads)
+app.use('/uploads', express.static('src/uploads'));
+
 // Rotas
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/todos', require('./routes/todos'));
@@ -39,7 +42,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
-    message: 'Dev Todo API está funcionando',
+  message: 'Listfy API está funcionando',
     timestamp: new Date().toISOString()
   });
 });

@@ -24,6 +24,8 @@ class _MainNavScreenState extends State<MainNavScreen> {
   String _greeting = '';
   String _firstName = '';
   String? _userPhotoPath;
+  // key to access Reminders tab state so parent can trigger add dialog
+  final GlobalKey<_RemindersTabState> _remindersKey = GlobalKey<_RemindersTabState>();
   // User? _user; // Removed unused field
 
   final List<Todo> _todos = [];
@@ -35,17 +37,21 @@ class _MainNavScreenState extends State<MainNavScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserAndGreeting();
+    _load();
   }
 
-  Future<void> _loadUserAndGreeting() async {
+  Future<void> _load() async {
     final user = await StorageHelper.getUser();
+    if (user == null) return;
 
+    // Priorizar nome, se vazio usar username
     String name = '';
-    if (user != null) {
-      name = (user.name ?? user.username).trim();
+    if (user.name != null && user.name!.trim().isNotEmpty) {
+      name = user.name!.trim();
+    } else {
+      name = user.username.trim();
     }
-
+    
     String firstName = '';
     if (name.isNotEmpty) {
       firstName = name.split(' ').first;
@@ -55,11 +61,26 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final greeting = _computeGreeting(hour);
 
     if (!mounted) return;
-    final photo = await StorageHelper.getUserPhotoPath();
+    
+    // Usar avatar do usuário se disponível, senão usar foto local
+    String? photoPath;
+    if (user.avatar != null && user.avatar!.isNotEmpty) {
+      // Se o avatar é uma URL completa, usar diretamente
+      if (user.avatar!.startsWith('http')) {
+        photoPath = user.avatar;
+      } else {
+        // Se é um caminho relativo, construir URL completa
+        photoPath = 'http://10.0.2.2:3000${user.avatar}';
+      }
+    } else {
+      // Fallback para foto local
+      photoPath = await StorageHelper.getUserPhotoPath();
+    }
+    
     setState(() {
       _firstName = firstName;
       _greeting = greeting;
-      _userPhotoPath = photo;
+      _userPhotoPath = photoPath;
     });
   }
 
@@ -123,7 +144,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = <Widget>[
+      final pages = <Widget>[
       HomeTab(
         todos: _todos,
         onAdd: _addTodo,
@@ -141,7 +162,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         },
       ),
       const PomodoroTab(),
-      const RemindersTab(),
+      RemindersTab(key: _remindersKey),
     ];
 
     return SafeScaffold(
@@ -184,7 +205,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
                 child: CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.inputColor,
-                  backgroundImage: _userPhotoPath != null ? FileImage(File(_userPhotoPath!)) : null,
+                  backgroundImage: _userPhotoPath != null 
+                    ? (_userPhotoPath!.startsWith('http') 
+                        ? NetworkImage(_userPhotoPath!) as ImageProvider
+                        : FileImage(File(_userPhotoPath!)))
+                    : null,
                   child: _userPhotoPath == null ? const Icon(Icons.person, color: Colors.white) : null,
                 ),
               ),
@@ -216,43 +241,74 @@ class _MainNavScreenState extends State<MainNavScreen> {
         unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
       ),
-      floatingActionButton: _index == 0
-          ? FloatingActionButton(
-              onPressed: () async {
-                final result = await showDialog<Map<String, String?>>(context: context, builder: (ctx) {
-                  final titleCtrl = TextEditingController();
-                  final descCtrl = TextEditingController();
-                  final dialogWidth = MediaQuery.of(ctx).size.width - 32.0;
-                  return AlertDialog(
-                    insetPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    title: const Text('Nova tarefa'),
-                    content: SizedBox(
-                      width: dialogWidth,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextField(controller: titleCtrl, decoration: const InputDecoration(hintText: 'Título')),
-                          const SizedBox(height: 8),
-                          TextField(controller: descCtrl, decoration: const InputDecoration(hintText: 'Descrição')),
-                        ],
+    floatingActionButton: (_index == 0 || _index == 3)
+      ? FloatingActionButton(
+        onPressed: () async {
+          if (_index == 0) {
+            final result = await showDialog<Map<String, String?>>(context: context, builder: (ctx) {
+              final titleCtrl = TextEditingController();
+              final descCtrl = TextEditingController();
+              final dialogWidth = MediaQuery.of(ctx).size.width - 32.0;
+              return AlertDialog(
+                insetPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+                contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                title: const Text('Nova tarefa'),
+                content: SizedBox(
+                  width: dialogWidth,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleCtrl,
+                        cursorColor: AppColors.primaryDark,
+                        decoration: const InputDecoration(
+                          hintText: 'Título',
+                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 194, 194, 194))),
+                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 145, 145, 145))),
+                        ),
                       ),
-                    ),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-                      ElevatedButton(onPressed: () => Navigator.of(context).pop({'title': titleCtrl.text.trim(), 'desc': descCtrl.text.trim()}), child: const Text('Criar')),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: descCtrl,
+                        cursorColor: AppColors.primaryDark,
+                        decoration: const InputDecoration(
+                          hintText: 'Descrição',
+                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 194, 194, 194))),
+                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 145, 145, 145))),
+                        ),
+                      ),
                     ],
-                  );
-                });
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: TextButton.styleFrom(foregroundColor: AppColors.priorityHigh),
+                    child: const Text('Cancelar'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop({'title': titleCtrl.text.trim(), 'desc': descCtrl.text.trim()}),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
+                    child: const Text('Criar'),
+                  ),
+                ],
+              );
+            });
 
-                if (result != null && (result['title']?.isNotEmpty ?? false)) {
-                  _addTodo(result['title']!, result['desc']);
-                }
-              },
-              backgroundColor: AppColors.primaryLight,
-              child: const Icon(Icons.add, color: AppColors.primaryDark),
-            )
-          : null,
+            if (result != null && (result['title']?.isNotEmpty ?? false)) {
+              _addTodo(result['title']!, result['desc']);
+            }
+          } else if (_index == 3) {
+            // trigger the Reminders tab add dialog
+            try {
+              _remindersKey.currentState?._showAddDialog();
+            } catch (_) {}
+          }
+        },
+        backgroundColor: AppColors.primaryLight,
+        child: const Icon(Icons.add, color: AppColors.primaryDark),
+      )
+      : null,
     );
   }
 }
@@ -306,15 +362,40 @@ class HomeTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: titleCtrl, decoration: const InputDecoration(hintText: 'Título')),
+                  TextField(
+                    controller: titleCtrl,
+                    cursorColor: AppColors.primaryDark,
+                    decoration: const InputDecoration(
+                      hintText: 'Título',
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 194, 194, 194))),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 145, 145, 145))),
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: descCtrl, decoration: const InputDecoration(hintText: 'Descrição'), maxLines: 4),
+                  TextField(
+                    controller: descCtrl,
+                    cursorColor: AppColors.primaryDark,
+                    decoration: const InputDecoration(
+                      hintText: 'Descrição',
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 194, 194, 194))),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color.fromARGB(255, 145, 145, 145))),
+                    ),
+                    maxLines: 4,
+                  ),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-              ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Salvar')),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false), 
+                style: TextButton.styleFrom(foregroundColor: AppColors.priorityHigh),
+                child: const Text('Cancelar')
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                child: const Text('Salvar')
+              ),
             ],
           );
         });
@@ -752,6 +833,7 @@ class _RemindersTabState extends State<RemindersTab> {
     } catch (_) {}
   }
 
+  // ignore: unused_element
   Future<void> _showAddDialog() async {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -760,6 +842,7 @@ class _RemindersTabState extends State<RemindersTab> {
 
     await showDialog<bool>(context: context, builder: (ctx) {
       return StatefulBuilder(builder: (ctx, setStateDialog) {
+        final dialogWidth = MediaQuery.of(ctx).size.width - 32.0;
         String dateLabel() {
           if (pickedDate == null) return 'Escolher data';
           return '${pickedDate!.day.toString().padLeft(2, '0')}/${pickedDate!.month.toString().padLeft(2, '0')}/${pickedDate!.year}';
@@ -771,22 +854,78 @@ class _RemindersTabState extends State<RemindersTab> {
         }
 
         return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+          contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           title: const Text('Novo lembrete'),
-          content: SingleChildScrollView(
+          content: SizedBox(
+            width: dialogWidth,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: titleCtrl, decoration: const InputDecoration(hintText: 'Título')),
+                TextField(
+                  controller: titleCtrl,
+                  cursorColor: AppColors.primaryDark,
+                  decoration: InputDecoration(
+                    hintText: 'Título',
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: const Color.fromARGB(255, 194, 194, 194))),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: const Color.fromARGB(255, 145, 145, 145))),
+                  ),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: descCtrl, decoration: const InputDecoration(hintText: 'Descrição'), maxLines: 3),
+                  TextField(
+                    controller: descCtrl,
+                    cursorColor: AppColors.primaryDark,
+                    decoration: InputDecoration(
+                      hintText: 'Descrição',
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: const Color.fromARGB(255, 194, 194, 194))),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: const Color.fromARGB(255, 145, 145, 145))),
+                    ),
+                    maxLines: 3,
+                  ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryDark, foregroundColor: AppColors.primaryLight),
                         onPressed: () async {
                           final now = DateTime.now();
-                          final d = await showDatePicker(context: ctx, initialDate: now, firstDate: DateTime(now.year - 2), lastDate: DateTime(now.year + 5));
+                          final d = await showDatePicker(
+                            context: ctx,
+                            initialDate: now,
+                            firstDate: DateTime(now.year - 2),
+                            lastDate: DateTime(now.year + 5),
+                            builder: (context, child) {
+                              final base = Theme.of(context);
+                              final cs = base.colorScheme.copyWith(
+                                primary: AppColors.success,
+                                secondary: AppColors.primaryLight,
+                                onPrimary: Colors.white,
+                              );
+                              return Theme(
+                                data: base.copyWith(
+                                  colorScheme: cs,
+                                  textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: AppColors.priorityHigh)),
+                                  elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(backgroundColor: AppColors.success)),
+                                  timePickerTheme: TimePickerThemeData(
+                                    dialBackgroundColor: AppColors.primaryLight,
+                                    dialHandColor: AppColors.primaryDark,
+                                    hourMinuteColor: AppColors.primaryDark,
+                                    hourMinuteTextColor: Colors.white,
+                                    hourMinuteTextStyle: TextStyle(color: AppColors.primaryDark, fontSize: 36, fontWeight: FontWeight.w600),
+                                    entryModeIconColor: AppColors.primaryDark,
+                                  ),
+                                  datePickerTheme: DatePickerThemeData(
+                                    headerBackgroundColor: AppColors.primaryDark,
+                                    headerForegroundColor: Colors.white,
+                                    dayBackgroundColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? AppColors.primaryDark : null),
+                                    dayForegroundColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.white : null),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
                           if (d != null) setStateDialog(() => pickedDate = d);
                         },
                         child: Text(dateLabel()),
@@ -794,9 +933,37 @@ class _RemindersTabState extends State<RemindersTab> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: OutlinedButton(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryDark, foregroundColor: AppColors.primaryLight),
                         onPressed: () async {
-                          final t = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
+                          final t = await showTimePicker(
+                            context: ctx,
+                            initialTime: TimeOfDay.now(),
+                            builder: (context, child) {
+                              final base = Theme.of(context);
+                              final cs = base.colorScheme.copyWith(
+                                primary: AppColors.success,
+                                secondary: AppColors.primaryLight,
+                                onPrimary: Colors.white,
+                              );
+                              return Theme(
+                                data: base.copyWith(
+                                  colorScheme: cs,
+                                  textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: AppColors.priorityHigh)),
+                                  elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(backgroundColor: AppColors.success)),
+                                  timePickerTheme: TimePickerThemeData(
+                                    dialBackgroundColor: AppColors.primaryLight,
+                                    dialHandColor: AppColors.primaryDark,
+                                    hourMinuteColor: AppColors.primaryDark,
+                                    hourMinuteTextColor: Colors.white,
+                                    hourMinuteTextStyle: TextStyle(color: AppColors.primaryDark, fontSize: 36, fontWeight: FontWeight.w600),
+                                    entryModeIconColor: AppColors.primaryDark,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
                           if (t != null) setStateDialog(() => pickedTime = t);
                         },
                         child: Text(timeLabel()),
@@ -807,9 +974,10 @@ class _RemindersTabState extends State<RemindersTab> {
               ],
             ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+            actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), style: TextButton.styleFrom(foregroundColor: AppColors.priorityHigh), child: const Text('Cancelar')),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
               onPressed: () {
                 if (titleCtrl.text.trim().isEmpty) return; // keep dialog open
                 DateTime? dt;
@@ -900,10 +1068,7 @@ class _RemindersTabState extends State<RemindersTab> {
                     },
                   ),
           ),
-          ElevatedButton(
-            onPressed: _showAddDialog,
-            child: const Text('Adicionar lembrete'),
-          ),
+          // button removed as requested
         ],
       ),
     );

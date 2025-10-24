@@ -1,12 +1,12 @@
 #!/bin/bash
 
-echo "🚀 Dev Todo - Executando aplicativo Flutter"
+echo "🚀 Listfy - Executando aplicativo Flutter"
 echo "==============================================="
 
 # Verificar se estamos na pasta correta
 if [ ! -d "app" ]; then
     echo "❌ Erro: Pasta 'app' não encontrada!"
-    echo "   Execute este script na raiz do projeto dev-note"
+    echo "   Execute este script na raiz do projeto listfy"
     exit 1
 fi
 

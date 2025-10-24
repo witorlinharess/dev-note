@@ -1,6 +1,6 @@
-# Dev Todo - Lista de Tarefas para Desenvolvedores
+# Listfy
 
-Um aplicativo mobile moderno de gerenciamento de tarefas com notificações, desenvolvido especificamente para desenvolvedores.
+Listify: Sua vida, em listas.
 
 ## 🚀 COMO EXECUTAR O APLICATIVO
 
@@ -67,7 +67,7 @@ cd app && flutter run --hot
 ## 🏗️ Estrutura do Projeto
 
 ```
-dev-note/
+listfy/
 ├── app/                          # Frontend Flutter
 │   ├── lib/
 │   │   ├── core/                 # Configurações principais
@@ -108,7 +108,7 @@ dev-note/
 1. **Clone o repositório**
 ```bash
 git clone <seu-repositorio>
-cd dev-note
+cd listfy
 ```
 
 2. **Configure o backend**
@@ -214,4 +214,4 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ---
 
-**Dev Todo** - Gerencie suas tarefas como um desenvolvedor! 🚀
+**Listify: Sua vida, em listas.** 🚀

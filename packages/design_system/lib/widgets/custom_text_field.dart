@@ -16,6 +16,7 @@ class CustomTextField extends StatefulWidget {
   final bool enabled;
   final String? errorText;
   final bool required;
+  final Color? textColor;
 
   const CustomTextField({
     Key? key,
@@ -33,6 +34,7 @@ class CustomTextField extends StatefulWidget {
     this.enabled = true,
     this.errorText,
     this.required = false,
+    this.textColor,
   }) : super(key: key);
 
   @override
@@ -101,7 +103,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           maxLines: widget.maxLines,
           enabled: widget.enabled,
           cursorColor: AppColors.primaryDark,
-          style: const TextStyle(color: AppColors.primaryDark),
+          style: TextStyle(color: widget.textColor ?? AppColors.primaryDark),
           showCursor: _focusNode.hasFocus,
           onFieldSubmitted: (v) {
             if (widget.hideKeyboardOnSubmit) {
